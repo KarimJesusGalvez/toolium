@@ -19,12 +19,16 @@ limitations under the License.
 import ast
 import logging
 import os
+import traceback
+from asyncio import sleep
 from configparser import NoSectionError
+from playwright.sync_api import Playwright, sync_playwright, Page
 
 from appium import webdriver as appiumdriver
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
+from selenium.webdriver.remote.webdriver import WebDriver
 
 from toolium.driver_wrappers_pool import DriverWrappersPool
 
@@ -47,7 +51,7 @@ class ConfigDriver(object):
         self.config = config
         self.utils = utils
 
-    def create_driver(self):
+    def create_driver(self) -> WebDriver | Page:
         """Create a selenium driver using specified config properties
 
         :returns: a new selenium driver
@@ -122,7 +126,8 @@ class ConfigDriver(object):
                 'opera': self._setup_opera,
                 'iexplore': self._setup_explorer,
                 'edge': self._setup_edge,
-                'phantomjs': self._setup_phantomjs
+                'phantomjs': self._setup_phantomjs,
+                'playwright': self._setup_playwright
             }
             try:
                 driver_setup_method = driver_setup[driver_name]
@@ -159,6 +164,14 @@ class ConfigDriver(object):
             capabilities = DesiredCapabilities.EDGE.copy()
         elif driver_name == 'phantomjs':
             capabilities = DesiredCapabilities.PHANTOMJS.copy()
+        elif driver_name == 'playwright':
+            print("Setting playwright capabilities")
+            capabilities = {
+                "browserName": "playwright",
+                "version": "1.2.6",
+                "platform": "ANY",
+                "javascriptEnabled": True,
+            }
         elif driver_name in ('android', 'ios', 'iphone'):
             capabilities = {}
         else:
@@ -459,3 +472,47 @@ class ConfigDriver(object):
         self.config.set('Server', 'host', '127.0.0.1')
         self.config.set('Server', 'port', '4723')
         return self._create_remote_driver()
+
+    def _setup_playwright(self, capabilities):
+        playwright = sync_playwright().start()
+        chromium = playwright.chromium
+        #TODO
+        # browser = chromium.launch().new_context(capabilities)
+        browser = chromium.launch().new_context(ignore_https_errors=True, record_video_dir="videos/",
+                                                record_video_size={"width": 1040, "height": 680})
+
+
+        page = browser.new_page()
+        page.log_types = ['Server','Client']
+        page.get_log = lambda name: logging.getLogger('Playwright.' + name)
+        page.logger = lambda name: logging.getLogger('Playwright.logger')
+        page.session_id = '0c9d1fc296db316f9004b866bd6b8032fa95b292'
+
+        def win_pos(width: int, height: int):
+            return {'width': width,'height':height}
+            # if width==0 or height==0:
+            #     width = 1500
+            #     height = 1500
+            #
+            # print ({'width': width, 'height': height})
+            # page.set_viewport_size({'width': width, 'height': height})
+
+        def default_time(timeout: str):
+            pass
+            # print(timeout)
+            # sleep(10)
+            # print('Printing stack\n\n')
+            # traceback.print_stack()
+            # print('Stack printed stack\n\n')
+
+            page.set_default_timeout(float(timeout))
+
+        page.set_window_position = win_pos
+        page.maximize_window = lambda: win_pos(1500,1500)
+        page.get_window_size = page.maximize_window
+        page.implicitly_wait = default_time
+        page.close = page.maximize_window
+
+        # TODO Logs Server, Client
+
+        return page

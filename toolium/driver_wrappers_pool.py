@@ -171,6 +171,15 @@ class DriverWrappersPool(object):
             except Exception as e:
                 driver_wrapper.logger.warning(
                     "Capture exceptions to avoid errors in teardown method due to session timeouts: \n %s" % e)
+                driver_wrappers.remove(driver_wrapper)
+                if 'object has no attribute' in e.__str__():
+                    try:
+                        driver_wrapper.driver.close()
+                    except Exception as e:
+                        driver_wrappers.remove(driver_wrapper)
+                        driver_wrapper.logger.warning(
+                            "Driver has no quit or close method: \n %s" % e)
+                        raise
 
     @classmethod
     def download_videos(cls, name, test_passed=True, maintain_default=False):

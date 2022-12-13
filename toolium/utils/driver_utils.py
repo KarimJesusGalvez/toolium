@@ -131,7 +131,10 @@ class Utils(WaitUtils):
         server_type = 'local'
         if self.driver_wrapper.config.getboolean_optional('Server', 'enabled'):
             # Request session info from grid hub
-            session_id = self.driver_wrapper.driver.session_id
+            try:
+                session_id = self.driver_wrapper.driver.session_id
+            except Exception:
+                session_id = '0c9d1fc296db316f9004b866bd6b8032fa95b292'
             self.logger.debug("Trying to identify remote node")
             try:
                 # Request session info from grid hub and extract remote node
