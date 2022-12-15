@@ -19,11 +19,9 @@ limitations under the License.
 import ast
 import logging
 import os
-import traceback
-from asyncio import sleep
 from configparser import NoSectionError
-from playwright.sync_api import Playwright, sync_playwright, Page
-
+from pathlib import Path
+from playwright.sync_api import sync_playwright, Page
 from appium import webdriver as appiumdriver
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
@@ -486,9 +484,18 @@ class ConfigDriver(object):
         page.log_types = ['Server','Client']
         page.get_log = lambda name: logging.getLogger('Playwright.' + name)
         page.logger = lambda name: logging.getLogger('Playwright.logger')
-        page.session_id = '0c9d1fc296db316f9004b866bd6b8032fa95b292'
 
+        def generate_fake_sessionid(lenght:int) -> str:
+            import random
+            import string
+            id = ''
+            for data in range(lenght):
+                id += random.choice(string.ascii_letters)
+            return id
+
+        page.session_id = generate_fake_sessionid(40)
         def win_pos(width: int, height: int):
+            page.logger("window").debug("Setting window position to " + str(width) + " " + str(height))
             return {'width': width,'height':height}
             # if width==0 or height==0:
             #     width = 1500
