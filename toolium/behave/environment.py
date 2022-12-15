@@ -253,20 +253,23 @@ def bdd_common_after_scenario(context_or_world, scenario, status):
     add_jira_status(get_jira_key_from_scenario(scenario), test_status, test_comment)
 
 
-def get_jira_key_from_scenario(scenario):
+def get_jira_key_from_scenario(scenario) -> str | None:
     """Extract Jira Test Case key from scenario tags.
     Two tag formats are allowed:
     @jira('PROJECT-32')
     @jira=PROJECT-32
 
     :param scenario: behave scenario
-    :returns: Jira test case key
+    :returns: Jira test case key or none if the tag hasn't been found
     """
+    logger = logging.getLogger("Environment.Jira")
     jira_regex = re.compile(r'jira[=\(\']*([A-Z]+\-[0-9]+)[\'\)]*$')
     for tag in scenario.tags:
         match = jira_regex.search(tag)
         if match:
+            logger.debug("Jira key" + match.group(1) + "found for " + scenario.name)
             return match.group(1)
+    logger.warning("Jira key not found for " + scenario.name)
     return None
 
 

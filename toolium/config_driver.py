@@ -498,12 +498,7 @@ class ConfigDriver(object):
             # page.set_viewport_size({'width': width, 'height': height})
 
         def default_time(timeout: str):
-            pass
-            # print(timeout)
-            # sleep(10)
-            # print('Printing stack\n\n')
-            # traceback.print_stack()
-            # print('Stack printed stack\n\n')
+            page.logger("window").debug("Setting default timeout to " + timeout)
 
             page.set_default_timeout(float(timeout))
 
