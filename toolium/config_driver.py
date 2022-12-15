@@ -502,12 +502,16 @@ class ConfigDriver(object):
 
             page.set_default_timeout(float(timeout))
 
+        def get_page_screenshot(filepath: str | Path):
+            page.logger("screenshot").info("Taking shot for  " + filepath)
+            page.screenshot(path=filepath)
+
         page.set_window_position = win_pos
         page.maximize_window = lambda: win_pos(1500,1500)
         page.get_window_size = page.maximize_window
         page.implicitly_wait = default_time
         page.close = page.maximize_window
-
-        # TODO Logs Server, Client
+        page.get_screenshot_as_file = get_page_screenshot
+        # TODO Logs Server, Client, + playwright trace enabled?
 
         return page
