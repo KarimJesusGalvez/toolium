@@ -483,7 +483,7 @@ class ConfigDriver(object):
         page = browser.new_page()
         page.log_types = ['Server','Client']
         page.get_log = lambda name: logging.getLogger('Playwright.' + name)
-        page.logger = lambda name: logging.getLogger('Playwright.logger')
+        page.logger = lambda name: logging.getLogger('Playwright' + name)
 
         def generate_fake_sessionid(lenght:int) -> str:
             import random

@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+import json
 import logging
 import re
 
@@ -34,7 +34,8 @@ attachments = []
 
 # Jira configuration
 enabled = None
-execution_url = None
+jiratoken = None
+execution_url = ''
 summary_prefix = None
 labels = None
 comments = None
@@ -70,9 +71,11 @@ def jira(test_key):
 
 def save_jira_conf():
     """Read Jira configuration from properties file and save it"""
-    global enabled, execution_url, summary_prefix, labels, comments, fix_version, build, only_if_changes, attachments
+    global enabled, jiratoken, execution_url, summary_prefix, labels, comments,\
+        fix_version, build, only_if_changes, attachments
     config = DriverWrappersPool.get_default_wrapper().config
     enabled = config.getboolean_optional('Jira', 'enabled')
+    jiratoken = config.get_optional('Jira', 'token')
     execution_url = config.get_optional('Jira', 'execution_url')
     summary_prefix = config.get_optional('Jira', 'summary_prefix')
     labels = config.get_optional('Jira', 'labels')
@@ -128,7 +131,7 @@ def change_all_jira_status():
     for test_status in jira_tests_status.values():
         change_jira_status(*test_status)
     jira_tests_status.clear()
-    logger.debug("Test cases status updated")
+    logger.debug("Update attampt complete, clearing queue")
 
 
 def change_jira_status(test_key, test_status, test_comment, test_attachments):
@@ -159,20 +162,57 @@ def change_jira_status(test_key, test_status, test_comment, test_attachments):
                 files['attachments{}'.format(index)] = open(test_attachments[index], 'rb')
         else:
             files = None
-        response = requests.post(execution_url, data=payload, files=files)
+        headers = {
+            "host": execution_url.split("//")[1],
+            "Cache-Control": "no-cache",
+            # 'Accept': 'application/json;charset=UTF-8',  # default for REST
+            "Content-Type": "application/json",  # ;charset=UTF-8',
+            # 'Accept': 'application/json',  # default for REST
+            # 'Pragma': 'no-cache',
+            # 'Expires': 'Thu, 01 Jan 1970 00:00:00 GMT'
+            "X-Atlassian-Token": "no-check",
+        }
+        payload = {'jiraTestCaseId': test_key, 'jiraStatus': test_status, 'summaryPrefix': summary_prefix,
+                   'labels': labels, 'comments': composed_comments, 'version': fix_version, 'build': build}
+        body = {"update":{
+                          # "summary":[{"set":"Bug in business logic"}],
+                          # "components":[{"set":""}],
+                          # "timetracking":[{"edit":{"originalEstimate":"1w 1d","remainingEstimate":"4d"}}],
+                          "labels":[labels]},
+                "fields":{
+                    # "summary":"This is a shorthand for a set operation on the summary field",
+
+                    }
+                }
+
+        if jiratoken:
+            headers["Authorization"] = f"Bearer {jiratoken}"
+            logger.debug("Sending PUT request to " + execution_url + "/rest/api/2/issue/" + test_key +
+                         " with payload" + json.dumps(payload))
+            # TODO fix GET 401 Unauthorized after PUT 302 Redirect (Auth Header is misssing in subsequent GET)
+
+            response = requests.put(execution_url + "/rest/api/2/issue/" + test_key,
+                                    data=json.dumps(payload), files=files)
+            logger.debug("Request sent, returned " + str(response.status_code))
+
+        else:
+            logger.debug("Jira OAuth token not found")
+            logger.debug("Sending POST request to " + execution_url + test_key + " with payload" + payload.__str__())
+            response = requests.post(execution_url, data=payload, files=files)
+
     except Exception as e:
         logger.warning("Error updating Test Case '%s': %s", test_key, e)
         return
 
     if response.status_code >= 400:
         logger.warning("Error updating Test Case '%s': [%s] %s", test_key, response.status_code,
-                       get_error_message(response.content))
+                       get_error_message(response.content.decode()))
     else:
         logger.debug("Response with status " + str(response.status_code) +
                      " is: '%s'", response.content.decode().splitlines()[0])
 
 
-def get_error_message(response_content):
+def get_error_message(response_content: str):
     """Extract error message from the HTTP response
 
     :param response_content: HTTP response from test case execution API
