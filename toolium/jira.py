@@ -179,59 +179,74 @@ def change_jira_status(test_key, test_status, test_comment, test_attachments: li
     if only_if_changes:
         payload['onlyIfStatusChanges'] = 'true'
     try:
-        if test_attachments and len(test_attachments) > 0:
-            files = dict()
-            for index in range(len(test_attachments)):
-                files['attachments{}'.format(index)] = open(test_attachments[index], 'rb')
-        else:
-            files = None
-        headers = {
-            "host": execution_url.split("//")[1],
-            "Cache-Control": "no-cache",
-            # 'Accept': 'application/json;charset=UTF-8',  # default for REST
-            "Content-Type": "application/json",  # ;charset=UTF-8',
-            # 'Accept': 'application/json',  # default for REST
-            # 'Pragma': 'no-cache',
-            # 'Expires': 'Thu, 01 Jan 1970 00:00:00 GMT'
-            "X-Atlassian-Token": "no-check",
-        }
-        payload = {'jiraTestCaseId': test_key, 'jiraStatus': test_status, 'summaryPrefix': summary_prefix,
-                   'labels': labels, 'comments': composed_comments, 'version': fix_version, 'build': build}
-        body = {"update":{
-                          # "summary":[{"set":"Bug in business logic"}],
-                          # "components":[{"set":""}],
-                          # "timetracking":[{"edit":{"originalEstimate":"1w 1d","remainingEstimate":"4d"}}],
-                          "labels":[labels]},
-                "fields":{
-                    # "summary":"This is a shorthand for a set operation on the summary field",
+        with JiraServer(execution_url, jiratoken) as server:
+            existing_issues = execute_query(server, 'issue = ' + test_key)
+            if not existing_issues:
+                logger.warning("Jira Issue not found,...")
+                return
+                # TODO issue = new_testcase(server, project_id, summary=scenarioname, description=description)
+                # test_key = issue.key
 
-                    }
-                }
+            # TODO enforce test case as issue type and call create_test_execution for each scenario as below
+            #  new_execution = create_test_execution(server,test_key, project_id)
 
-        if jiratoken:
-            headers["Authorization"] = f"Bearer {jiratoken}"
-            logger.debug("Sending PUT request to " + execution_url + "/rest/api/2/issue/" + test_key +
-                         " with payload" + json.dumps(payload))
-            # TODO fix GET 401 Unauthorized after PUT 302 Redirect (Auth Header is misssing in subsequent GET)
+            logger.info("Retrieving " + test_key)
+            issue = server.issue(test_key)
 
-            response = requests.put(execution_url + "/rest/api/2/issue/" + test_key,
-                                    data=json.dumps(payload), files=files)
-            logger.debug("Request sent, returned " + str(response.status_code))
+            # TODO massage payload, labels??
+            logger.debug("Update skipped for " + test_key)
+            # issue.update(fields=payload, jira=server)
 
-        else:
-            logger.debug("Jira OAuth token not found")
-            logger.debug("Sending POST request to " + execution_url + test_key + " with payload" + payload.__str__())
-            response = requests.post(execution_url, data=payload, files=files)
+            # TODO wait to create test execution before transitioning to behave status
+            logger.debug("Transition skipped for " + test_key)
+            # transition(server, issue, test_status)
+
+            add_results(server, issue.key, test_attachments)
 
     except Exception as e:
-        logger.warning("Error updating Test Case '%s': %s", test_key, e)
+        logger.error("Exception while updating Issue '%s': %s", test_key, e)
         return
 
+
+def execute_query(jira: JIRA, query: str):
+    logger = logging.getLogger("Jira.Queries")
+
+    logger.info(f"executing query: {query} ...\n")
+    existing_issues = jira.search_issues(query)
+
+    issuesfound = ""
+    for issue in existing_issues:
+        issuesfound += f'\n{issue} {jira.issue(issue).fields.summary}'
+    if issuesfound:
+        logger.info("Found issue/s:" + issuesfound)
+    return existing_issues
+
+
+def create_test_execution(server: JIRA, issueid: str, projectid: int, summary=None, description=None) -> Issue:
+    """Creates an execution linked to the TestCase provided"""
+    issue_dict = {
+        'project': {'id': projectid},
+        'summary': summary if summary else input("Summary:"),
+        'description': description if description else input("Description:"),
+        'issuetype': {'name': 'Test Case Execution'},
+        'parent': {'key': issueid}
+    }
+
+    return server.create_issue(fields=issue_dict)
+
+
+def transition(server: JIRA, issue: Issue, test_status: str):
+    """
+    Transitions the issue to a new state, see issue workflows in the project for available options
+    param test_status: the new status of the issue
+    """
+    logger.info("Setting new status for " + issue.key + "from " + issue.get_field("status") + " to " + test_status)
+    response = server.transition_issue(issue.key, transition=test_status.lower())
     if response.status_code >= 400:
-        logger.warning("Error updating Test Case '%s': [%s] %s", test_key, response.status_code,
+        logger.warning("Error transitioning Test Case '%s': [%s] %s", issue.key, response.status_code,
                        get_error_message(response.content.decode()))
     else:
-        logger.debug("Response with status " + str(response.status_code) +
+        logger.debug("Transition response with status " + str(response.status_code) +
                      " is: '%s'", response.content.decode().splitlines()[0])
 
 
