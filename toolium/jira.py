@@ -154,16 +154,16 @@ def change_all_jira_status():
     for test_status in jira_tests_status.values():
         change_jira_status(*test_status)
     jira_tests_status.clear()
-    logger.debug("Update attampt complete, clearing queue")
+    logger.debug("Update attempt complete, clearing queue")
 
 
-def change_jira_status(test_key, test_status, test_comment, test_attachments):
+def change_jira_status(test_key, test_status, test_comment, test_attachments: list[str]):
     """Update test status in Jira
 
     :param test_key: test case key in Jira
     :param test_status: test case status
     :param test_comment: test case comments
-    :param test_attachments: test case attachments
+    :param test_attachments: list of absolutes paths of test case attachment files
     """
 
     if not execution_url:
