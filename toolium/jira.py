@@ -56,6 +56,7 @@ attachments = []
 # Jira configuration
 enabled = None
 jiratoken = None
+project_id = 0
 execution_url = ''
 summary_prefix = None
 labels = None
@@ -92,11 +93,12 @@ def jira(test_key):
 
 def save_jira_conf():
     """Read Jira configuration from properties file and save it"""
-    global enabled, jiratoken, execution_url, summary_prefix, labels, comments,\
+    global enabled, jiratoken, project_id, execution_url, summary_prefix, labels, comments,\
         fix_version, build, only_if_changes, attachments
     config = DriverWrappersPool.get_default_wrapper().config
     enabled = config.getboolean_optional('Jira', 'enabled')
     jiratoken = config.get_optional('Jira', 'token')
+    project_id = int(config.get_optional('Jira', 'project_id'))
     execution_url = config.get_optional('Jira', 'execution_url')
     summary_prefix = config.get_optional('Jira', 'summary_prefix')
     labels = config.get_optional('Jira', 'labels')
