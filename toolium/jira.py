@@ -250,6 +250,64 @@ def transition(server: JIRA, issue: Issue, test_status: str):
                      " is: '%s'", response.content.decode().splitlines()[0])
 
 
+def add_results(jira: JIRA, issueid: str, attachements: list[str] = None):
+    """Adds the results to the execution or the associated test case instead"""
+
+    def addscreenshots(issueid: str, attachements: list[str] = None):
+        """
+            Attach the screenshots found the report folder to the jira issue provided
+            param issueid: Full Jira ID
+            param attachements: Absolute paths of attachments
+            Raises FileNotFound: if an attachement file is not found
+        """
+
+        if attachements:
+            for filepath in attachements:
+                if os.path.isfile(path.join(filepath)):
+                    with open(filepath, 'rb') as file:
+                        logger.debug("Opened screenshot " + file.name)
+                        jira.add_attachment(issue=issueid, attachment=file)
+                        logger.info("Attached " + file.name + " into " + issueid)
+        else:
+            screenshotspath = path.join(path.dirname(__file__), ".", DriverWrappersPool.screenshots_directory)
+            logger.debug("Reading screenshot folder " + screenshotspath)
+
+            if len(os.listdir(screenshotspath)) < 1:
+                logger.warning("Screenshot folder empty...")
+                return
+
+            for filename in os.listdir(screenshotspath):
+                if os.path.isfile(path.join(screenshotspath, filename)):
+                    with open(os.path.join(screenshotspath, filename), 'rb') as file:
+                        logger.debug("Opened screenshot " + file.name)
+                        jira.add_attachment(issue=issueid, attachment=file)
+                        logger.info("Attached " + filename + " into " + issueid)
+        logger.info("Screenshots uploaded...")
+
+    def addlogs(issueid: str):
+        """
+            Attach the logs in the report folder to the jira issue provided
+            param issueid Full Jira ID
+            Raises FileNotFound Error if the log file is not found in reports
+        """
+        logpath = path.join(path.dirname(__file__),
+                            ".", DriverWrappersPool.screenshots_directory, "..", "..", "toolium.log")
+
+        with open(logpath, 'rb') as file:
+            logger.debug("Opened log file " + file.name)
+            jira.add_attachment(issue=issueid, attachment=file)
+            logger.info("Attached log into " + issueid)
+
+    try:
+        logger.info("Adding results to issue...")
+        addscreenshots(issueid, attachements) if attachements else addscreenshots(issueid)
+        addlogs(issueid)
+        logger.debug("Results added to issue " + issueid)
+
+    except Exception as error:
+        logger.error("Results not added, exception:" + str(error))
+
+
 def get_error_message(response_content: str):
     """Extract error message from the HTTP response
 
