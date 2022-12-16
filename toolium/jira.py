@@ -15,16 +15,37 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import json
 import logging
+import os
 import re
-
-import requests
-
+from os import path
+from jira import JIRA, Issue
 from toolium.config_driver import get_error_message_from_exception
 from toolium.driver_wrappers_pool import DriverWrappersPool
 
 logger = logging.getLogger(__name__)
+
+
+class JiraServer:
+
+    def __init__(self, execution_url, token=None):
+        global logger
+        logger = logging.getLogger("Jira.Server")
+        self.url = execution_url
+        self._token = token
+        self.server: JIRA = None
+
+    def __enter__(self):
+        server_url = self.url
+        headers = JIRA.DEFAULT_OPTIONS["headers"]
+        headers["Authorization"] = f"Bearer {self._token}"
+        logger.info("Starting Jira server...")
+        self.server = JIRA(server=server_url, options={"headers": headers, 'verify': True}, get_server_info=True)
+        return self.server
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.server.close()
+        logger.info("Jira server closed//")
 
 # Dict to save tuples with jira keys, their test status, comments and attachments
 jira_tests_status = {}
