@@ -91,6 +91,7 @@ class PageElement(CommonObject):
             self.logger.error(msg, type(self).__name__, self.locator, parent_msg)
             exception.msg += "\n  {}".format(msg % (type(self).__name__, self.locator, parent_msg))
             raise exception
+
         return self._web_element
 
     def _find_web_element(self):
@@ -106,7 +107,7 @@ class PageElement(CommonObject):
             # If the element is encapsulated we use the shadowroot tag in yaml (eg. Shadowroot: root_element_name)
             if self.shadowroot:
                 if self.locator[0] != By.CSS_SELECTOR:
-                    raise Exception('Locator type should be CSS_SELECTOR using shadowroot but found: '
+                    raise TypeError('Locator type should be CSS_SELECTOR using shadowroot but found: '
                                     '%s' % self.locator[0])
                 # querySelector only support CSS SELECTOR locator
                 self._web_element = self.driver.execute_script('return document.querySelector("%s").shadowRoot.'

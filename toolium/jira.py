@@ -47,6 +47,7 @@ class JiraServer:
         self.server.close()
         logger.info("Jira server closed//")
 
+
 # Dict to save tuples with jira keys, their test status, comments and attachments
 jira_tests_status = {}
 
@@ -154,7 +155,10 @@ def change_all_jira_status():
     for test_status in jira_tests_status.values():
         change_jira_status(*test_status)
     jira_tests_status.clear()
-    logger.debug("Update attempt complete, clearing queue")
+    if enabled:
+        logger.debug("Update attempt complete, clearing queue")
+    else:
+        logger.debug("Jira disabled, upload skipped")
 
 
 def change_jira_status(test_key, test_status, test_comment, test_attachments: list[str]):

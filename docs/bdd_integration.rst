@@ -48,7 +48,7 @@ example:
 
 After initialization, the following attributes will be available in behave context:
 
-- :code:`context.toolium_config`: dictionary with Toolium configuration, readed from properties.cfg
+- :code:`context.toolium_config`: dictionary with Toolium configuration, read from properties.cfg
 - :code:`context.driver_wrapper`: :ref:`DriverWrapper <driver_wrapper>` instance
 - :code:`context.driver`: Selenium or Appium driver instance
 - :code:`context.utils`: :ref:`Utils <utils>` instance

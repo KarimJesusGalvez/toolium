@@ -130,7 +130,7 @@ class ConfigDriver(object):
             try:
                 driver_setup_method = driver_setup[driver_name]
             except KeyError:
-                raise Exception('Unknown driver {0}'.format(driver_name))
+                raise ValueError('Unknown driver {0}'.format(driver_name))
 
             # Get driver capabilities
             capabilities = self._get_capabilities_from_driver_type(driver_name)
@@ -173,7 +173,7 @@ class ConfigDriver(object):
         elif driver_name in ('android', 'ios', 'iphone'):
             capabilities = {}
         else:
-            raise Exception('Unknown driver {0}'.format(driver_name))
+            raise ValueError('Unknown driver {0}'.format(driver_name))
         return capabilities
 
     def _add_capabilities_from_driver_type(self, capabilities):
@@ -471,32 +471,36 @@ class ConfigDriver(object):
         self.config.set('Server', 'port', '4723')
         return self._create_remote_driver()
 
-    def _setup_playwright(self, capabilities):
+    def _setup_playwright(self, capabilities) -> Page:
         playwright = sync_playwright().start()
+        # TODO Add browser property in config
         chromium = playwright.chromium
-        #TODO
+        # TODO redirect capabilities to playwright's context
         # browser = chromium.launch().new_context(capabilities)
         browser = chromium.launch().new_context(ignore_https_errors=True, record_video_dir="videos/",
                                                 record_video_size={"width": 1040, "height": 680})
 
-
         page = browser.new_page()
-        page.log_types = ['Server','Client']
+        page.log_types = ['Server', 'Client']
         page.get_log = lambda name: logging.getLogger('Playwright.' + name)
         page.logger = lambda name: logging.getLogger('Playwright' + name)
 
-        def generate_fake_sessionid(lenght:int) -> str:
+        page.desired_capabilities = {'platform': 'playwright', 'browser': browser.browser}
+
+        def generate_fake_sessionid(length: int) -> str:
             import random
             import string
-            id = ''
-            for data in range(lenght):
-                id += random.choice(string.ascii_letters)
-            return id
+            session_id = ''
+            for _data in range(length):
+                session_id += random.choice(string.ascii_letters)
+            return session_id
 
         page.session_id = generate_fake_sessionid(40)
-        def win_pos(width: int, height: int):
+
+        def window_position(width: int, height: int):
             page.logger("window").debug("Setting window position to " + str(width) + " " + str(height))
-            return {'width': width,'height':height}
+            return {'width': width, 'height': height}
+            # TODO redirect to playwright's page.set_viewport_size()
             # if width==0 or height==0:
             #     width = 1500
             #     height = 1500
@@ -506,15 +510,14 @@ class ConfigDriver(object):
 
         def default_time(timeout: str):
             page.logger("window").debug("Setting default timeout to " + timeout)
-
             page.set_default_timeout(float(timeout))
 
         def get_page_screenshot(filepath: str | Path):
             page.logger("screenshot").info("Taking shot for  " + filepath)
             page.screenshot(path=filepath)
 
-        page.set_window_position = win_pos
-        page.maximize_window = lambda: win_pos(1500,1500)
+        page.set_window_position = window_position
+        page.maximize_window = lambda: window_position(1500, 1500)
         page.get_window_size = page.maximize_window
         page.implicitly_wait = default_time
         page.close = page.maximize_window

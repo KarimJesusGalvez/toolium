@@ -36,6 +36,7 @@ try:
     from needle.engines.imagemagick_engine import Engine as MagickEngine
 except ImportError:
     pass
+logger = logging.getLogger("Visual Test")
 
 
 class VisualTest(object):
@@ -57,7 +58,7 @@ class VisualTest(object):
         if not self.driver_wrapper.config.getboolean_optional('VisualTests', 'enabled') and not self.force:
             return
         if 'PerceptualEngine' not in globals():
-            raise Exception('The visual tests are enabled, but needle is not installed')
+            raise ModuleNotFoundError('The visual tests are enabled, but needle is not installed')
 
         self.utils = self.driver_wrapper.utils
         self.logger = logging.getLogger(__name__)
@@ -126,6 +127,7 @@ class VisualTest(object):
         :param exclude_elements: list of WebElements, PageElements or element locators as a tuple (locator_type,
                                  locator_value) that must be excluded from the assertion
         """
+        logger.info("Asserting screenshot " + filename)
         if not self.driver_wrapper.config.getboolean_optional('VisualTests', 'enabled') and not self.force:
             return
         if not (isinstance(threshold, int) or isinstance(threshold, float)) or threshold < 0 or threshold > 1:
