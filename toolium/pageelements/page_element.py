@@ -84,7 +84,11 @@ class PageElement(CommonObject):
         :rtype: selenium.webdriver.remote.webelement.WebElement or appium.webdriver.webelement.WebElement
         """
         try:
-            self._find_web_element()
+            try:
+                self._find_web_element()
+            except AttributeError:
+                self.driver_wrapper.driver.locator(str(self.locator[0]).lower().split(".")[1] + "=" + self.locator[1])
+
         except NoSuchElementException as exception:
             parent_msg = f" and parent locator {self.parent_locator_str()}" if self.parent else ''
             msg = "Page element of type '%s' with locator %s%s not found"

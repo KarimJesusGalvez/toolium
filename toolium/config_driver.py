@@ -512,9 +512,9 @@ class ConfigDriver(object):
             page.logger("window").debug("Setting default timeout to " + timeout)
             page.set_default_timeout(float(timeout))
 
-        def get_page_screenshot(filepath: str | Path):
-            page.logger("screenshot").info("Taking shot for  " + filepath)
-            page.screenshot(path=filepath)
+        def get_page_screenshot(filepath: str | Path) -> bytes:
+            page.logger("screenshot").debug("Taking shot for  " + filepath)
+            return page.screenshot(path=filepath)
 
         page.set_window_position = window_position
         page.maximize_window = lambda: window_position(1500, 1500)

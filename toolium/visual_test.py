@@ -150,7 +150,16 @@ class VisualTest(object):
         report_name = '{}<br>({})'.format(file_suffix, filename) if file_suffix else '-<br>({})'.format(filename)
 
         # Get screenshot and modify it
-        img = Image.open(BytesIO(self.driver_wrapper.driver.get_screenshot_as_png()))
+        try:
+            imgbytes = self.driver_wrapper.driver.get_screenshot_as_png()
+            img = Image.open(BytesIO(imgbytes))
+
+        except AttributeError:
+            imgpath = path.join(DriverWrappersPool.screenshots_directory, filename)
+            imgbytes = self.driver_wrapper.driver.get_screenshot_as_file(imgpath)
+            logger.debug("getting img" + filename + " for visual testing")
+            img = Image.open(BytesIO(imgbytes))
+
         img = self.remove_scrolls(img)
         img = self.mobile_resize(img)
         img = self.desktop_resize(img)
