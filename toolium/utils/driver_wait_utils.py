@@ -18,6 +18,7 @@ limitations under the License.
 
 import logging
 import time
+from playwright.sync_api import Locator, Page
 from selenium.common.exceptions import NoSuchElementException, TimeoutException, StaleElementReferenceException
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -81,7 +82,10 @@ class WaitUtils(object):
         """
         web_element = self._expected_condition_find_element(element)
         try:
-            return web_element if web_element and web_element.is_displayed() else False
+            if isinstance(web_element,Locator):
+                return web_element if web_element and web_element.is_visible() else False
+            else:
+                return web_element if web_element and web_element.is_displayed() else False
         except StaleElementReferenceException:
             return False
 
