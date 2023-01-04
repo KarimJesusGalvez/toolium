@@ -111,7 +111,7 @@ def save_jira_conf():
     jira_properties = {"enabled": enabled, "execution_url": execution_url, "summary_prefix": summary_prefix,
                        "labels": labels, "comments": comments, "fix_version": fix_version, "build": build,
                        "only_if_changes": only_if_changes, "attachments": attachments}
-    logger.debug("Jira properties set:" + jira_properties.__str__())
+    logger.debug("Jira properties read:" + jira_properties.__str__())
 
 
 def add_attachment(attachment):

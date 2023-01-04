@@ -498,7 +498,7 @@ class ConfigDriver(object):
         page.session_id = generate_fake_sessionid(40)
 
         def window_position(width: int, height: int):
-            page.logger("window").debug("Setting window position to " + str(width) + " " + str(height))
+            self.logger.debug("Setting window position to " + str(width) + " " + str(height))
             return {'width': width, 'height': height}
             # TODO redirect to playwright's page.set_viewport_size()
             # if width==0 or height==0:
@@ -508,12 +508,12 @@ class ConfigDriver(object):
             # print ({'width': width, 'height': height})
             # page.set_viewport_size({'width': width, 'height': height})
 
-        def default_time(timeout: str):
-            page.logger("window").debug("Setting default timeout to " + timeout)
+        def default_time(timeout: int) -> None:
+            self.logger.debug("Setting default timeout to " + str(timeout))
             page.set_default_timeout(float(timeout))
 
         def get_page_screenshot(filepath: str | Path) -> bytes:
-            page.logger("screenshot").debug("Taking shot for  " + filepath)
+            self.logger.debug("Taking shot for " + filepath)
             return page.screenshot(path=filepath)
 
         page.set_window_position = window_position

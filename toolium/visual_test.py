@@ -131,7 +131,7 @@ class VisualTest(object):
         if not self.driver_wrapper.config.getboolean_optional('VisualTests', 'enabled') and not self.force:
             return
         if not (isinstance(threshold, int) or isinstance(threshold, float)) or threshold < 0 or threshold > 1:
-            raise TypeError('Threshold must be a number between 0 and 1: {}'.format(threshold))
+            raise ValueError('Threshold must be a number between 0 and 1: {}'.format(threshold))
 
         # Search elements
         web_element = self.utils.get_web_element(element)
@@ -165,6 +165,7 @@ class VisualTest(object):
         img = self.desktop_resize(img)
         img = self.exclude_elements(img, exclude_web_elements)
         img = self.crop_element(img, web_element)
+        logger.info("Saving visual test shot after modifications as " + unique_name)
         img.save(output_file)
         DriverWrappersPool.visual_number += 1
 
