@@ -227,6 +227,9 @@ class WaitUtils(object):
         :returns: condition method response
         """
         # Remove implicitly wait timeout
+
+        if isinstance(self.driver_wrapper.driver,Page):
+            return "true"
         implicitly_wait = self.get_implicitly_wait()
         if implicitly_wait != 0:
             self.driver_wrapper.driver.implicitly_wait(0)
