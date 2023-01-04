@@ -516,12 +516,22 @@ class ConfigDriver(object):
             self.logger.debug("Taking shot for " + filepath)
             return page.screenshot(path=filepath)
 
+        # redirect selenium methods
         page.set_window_position = window_position
+        page.set_window_size = window_position
         page.maximize_window = lambda: window_position(1500, 1500)
         page.get_window_size = page.maximize_window
+        page.get = page.goto
+        page.execute_script = page.evaluate
+        page.refresh = page.reload
+        page.get_cookies = page.context.cookies()
+        page.delete_all_cookies = page.context.clear_cookies
         page.implicitly_wait = default_time
         page.close = page.maximize_window
         page.get_screenshot_as_file = get_page_screenshot
-        # TODO Logs Server, Client, + playwright trace enabled?
+
+        # TODO Server and Client Logs
+
+        # TODO start and stop trace recording
 
         return page
