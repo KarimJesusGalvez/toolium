@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+from playwright.sync_api import Page
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
 
@@ -84,10 +84,7 @@ class PageElement(CommonObject):
         :rtype: selenium.webdriver.remote.webelement.WebElement or appium.webdriver.webelement.WebElement
         """
         try:
-            try:
-                self._find_web_element()
-            except AttributeError:
-                self.driver_wrapper.driver.locator(str(self.locator[0]).lower().split(".")[1] + "=" + self.locator[1])
+            self._find_web_element()
 
         except NoSuchElementException as exception:
             parent_msg = f" and parent locator {self.parent_locator_str()}" if self.parent else ''
@@ -118,11 +115,20 @@ class PageElement(CommonObject):
                                                                'querySelector("%s")' % (self.shadowroot,
                                                                                         self.locator[1]))
             else:
-                # Element will be searched from parent element or from driver
-                base = self.utils.get_web_element(self.parent) if self.parent else self.driver
-                # Find elements and get the correct index or find a single element
-                self._web_element = base.find_elements(*self.locator)[self.order] if self.order \
-                    else base.find_element(*self.locator)
+
+                if isinstance(self.driver,Page):
+                    self.logger.debug("Playwright locator for element is " +  self.locator.__repr__())
+                    locator = str(self.locator[0]) + "=" + str(self.locator[1])
+                    self.logger.debug('Element will be searched from parent element or from driver')
+                    self.logger.debug('Find elements and get the correct index or find a single element')
+                    self._web_element = self.driver.locator(locator)[self.order] if self.order \
+                        else self.driver.locator(locator)
+                else:
+                    self.logger.debug('Element will be searched from parent element or from driver')
+                    base = self.utils.get_web_element(self.parent) if self.parent else self.driver
+                    self.logger.debug('Find elements and get the correct index or find a single element')
+                    self._web_element = base.find_elements(*self.locator)[self.order] if self.order \
+                        else base.find_element(*self.locator)
 
     def _android_automatic_context_selection(self):
         """Change context selection depending if the element is a webview for android devices"""
@@ -281,7 +287,7 @@ class PageElement(CommonObject):
         VisualTest(self.driver_wrapper, force).assert_screenshot(self.web_element, filename, self.__class__.__name__,
                                                                  threshold, exclude_elements)
 
-    def get_attribute(self, name):
+    def get_attribute(self, name: str):
         """Get the given attribute or property of the element
 
         :param name: name of the attribute/property to retrieve
