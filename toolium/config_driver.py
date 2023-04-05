@@ -533,5 +533,6 @@ class ConfigDriver(object):
         # TODO Server and Client Logs
 
         # TODO start and stop trace recording
-
+        self.logger.debug("starting record tracing with snapshots")
+        page.context.tracing.start(screenshots=True, snapshots=True, sources=True)
         return page

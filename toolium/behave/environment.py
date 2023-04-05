@@ -300,6 +300,13 @@ def bdd_common_after_all(context_or_world):
 
     :param context_or_world: behave context or lettuce world
     """
+    if isinstance(context_or_world.driver_wrapper.driver, Page):
+        filename = datetime.now().strftime("%y_%m_%d__%H_%M_%S")
+        # TODO pinpoint exact path
+        outputpath = DriverWrappersPool.get_configured_value('TOOLIUM_OUTPUT_DIRECTORY', 'Output_directory',
+                                 None, 'output')
+        tracepath = join(outputpath, "..", "web_behave","output", "Playwright traces", f"{filename}.zip")
+        context_or_world.driver_wrapper.driver.context.tracing.stop(path=tracepath)
     # Close drivers
     DriverWrappersPool.close_drivers(scope='session', test_name='multiple_tests',
                                      test_passed=context_or_world.global_status['test_passed'])
