@@ -125,7 +125,9 @@ class ConfigDriver(object):
                 'iexplore': self._setup_explorer,
                 'edge': self._setup_edge,
                 'phantomjs': self._setup_phantomjs,
-                'playwright': self._setup_playwright
+                'playwright_chrome': self._setup_playwright,
+                'playwright_firefox': self._setup_playwright_firefox,
+                'playwright_safari': self._setup_playwright_safari
             }
             try:
                 driver_setup_method = driver_setup[driver_name]
@@ -162,7 +164,7 @@ class ConfigDriver(object):
             capabilities = DesiredCapabilities.EDGE.copy()
         elif driver_name == 'phantomjs':
             capabilities = DesiredCapabilities.PHANTOMJS.copy()
-        elif driver_name == 'playwright':
+        elif 'playwright' in driver_name:
             print("Setting playwright capabilities")
             capabilities = {
                 "browserName": "playwright",
@@ -471,13 +473,21 @@ class ConfigDriver(object):
         self.config.set('Server', 'port', '4723')
         return self._create_remote_driver()
 
-    def _setup_playwright(self, capabilities) -> Page:
+
+    def _setup_playwright(self, capabilities, browser: str = "chrome") -> Page:
         playwright = sync_playwright().start()
+
         # TODO Add browser property in config
-        chromium = playwright.chromium
+        if "firefox" in browser:
+            browser_instace = playwright.firefox
+        elif "safari" in browser or "webkit" in browser:
+            browser_instace = playwright.webkit
+        else:
+            browser_instace = playwright.chromium
+
         # TODO redirect capabilities to playwright's context
         # browser = chromium.launch().new_context(capabilities)
-        browser = chromium.launch().new_context(ignore_https_errors=True, record_video_dir="videos/",
+        browser = browser_instace.launch().new_context(ignore_https_errors=True, record_video_dir="videos/",
                                                 record_video_size={"width": 1040, "height": 680})
 
         page = browser.new_page()
@@ -536,3 +546,8 @@ class ConfigDriver(object):
         self.logger.debug("starting record tracing with snapshots")
         page.context.tracing.start(screenshots=True, snapshots=True, sources=True)
         return page
+
+    def _setup_playwright_firefox(self, capabilities) -> Page:
+        return self._setup_playwright(capabilities, "firefox")
+    def _setup_playwright_safari(self, capabilities) -> Page:
+        return self._setup_playwright(capabilities, "safari")
