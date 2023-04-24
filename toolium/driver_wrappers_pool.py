@@ -18,9 +18,8 @@ limitations under the License.
 
 import inspect
 import os
-
 import datetime
-
+from playwright.sync_api import Page
 from toolium.config_files import ConfigFiles
 from toolium.utils.path_utils import get_valid_filename, makedirs_safe
 from toolium.selenoid import Selenoid
