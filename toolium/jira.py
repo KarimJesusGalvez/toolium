@@ -20,6 +20,7 @@ import os
 import re
 from os import path
 from jira import JIRA, Issue
+from jira.exceptions import JIRAError
 from toolium.config_driver import get_error_message_from_exception
 from toolium.driver_wrappers_pool import DriverWrappersPool
 
@@ -206,7 +207,8 @@ def change_jira_status(test_key, test_status, test_comment, test_attachments: li
 
             add_results(server, new_execution.key, test_attachments)
 
-    except Exception as e:
+    except JIRAError as e:
+        print_trace(logger, e)
         logger.error("Exception while updating Issue '%s': %s", test_key, e)
         return
 
@@ -309,7 +311,9 @@ def add_results(jira: JIRA, issueid: str, attachements: list[str] = None):
         addlogs(issueid)
         logger.debug("Results added to issue " + issueid)
 
-    except Exception as error:
+    except FileNotFoundError as error:
+        # TODO catch jira exception types
+        print_trace(logger, error)
         logger.error("Results not added, exception:" + str(error))
 
 
@@ -335,3 +339,22 @@ def get_error_message(response_content: str):
         logger.debug("Error message extracted from HTTP response with regex:" + local_regex.__repr__())
 
     return error_message
+
+
+def print_trace(logger, e):
+    # TODO move to utils as stand alone
+    # TODO set custom JiraError for toolium
+    import traceback
+
+    trace = traceback.format_tb(e.__traceback__, 30)
+    final_stack = ''
+    for count in range(len(trace)):
+        final_stack += f'Trace stack {count} {trace[count]}'
+    logger.error(f'Error Trace:\n{final_stack}')
+    logger.error(f'Error: {e.__class__}')
+    if hasattr(e, "msg"):
+        logger.error(f'Error Message: {e.msg}')
+    elif e.__class__ == "<class 'AttributeError'>":
+        logger.error(f'Error Message: {e.obj} has no {e.name}')
+    else:
+        logger.error(e.args)
