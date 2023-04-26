@@ -104,7 +104,11 @@ def save_jira_conf():
     project_id = int(config.get_optional('Jira', 'project_id'))
     execution_url = config.get_optional('Jira', 'execution_url')
     summary_prefix = config.get_optional('Jira', 'summary_prefix')
-    labels = config.get_optional('Jira', 'labels')
+    labels_raw = config.get_optional('Jira', 'labels')
+    labels_raw = labels_raw.replace("[", "").replace("]", "")
+    labels = []
+    for label in labels_raw.split(","):
+        labels.append(label)
     comments = config.get_optional('Jira', 'comments')
     fix_version = config.get_optional('Jira', 'fixversion')
     build = config.get_optional('Jira', 'build')
