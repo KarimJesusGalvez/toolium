@@ -243,14 +243,16 @@ def transition(server: JIRA, issue: Issue, test_status: str):
     Transitions the issue to a new state, see issue workflows in the project for available options
     param test_status: the new status of the issue
     """
-    logger.info("Setting new status for " + issue.key + "from " + issue.get_field("status") + " to " + test_status)
-    response = server.transition_issue(issue.key, transition=test_status.lower())
-    if response.status_code >= 400:
-        logger.warning("Error transitioning Test Case '%s': [%s] %s", issue.key, response.status_code,
-                       get_error_message(response.content.decode()))
-    else:
-        logger.debug("Transition response with status " + str(response.status_code) +
-                     " is: '%s'", response.content.decode().splitlines()[0])
+    logger.info("Setting new status for " + issue.key + "from " + issue.fields.status.raw['name'] + " to " + test_status)
+    try:
+        server.transition_issue(issue.key, transition=test_status.lower())
+    except JIRAError:
+        # TODO Get available transitions
+        logger.warning("Available transitions for %s are %s", issue.key, server.transitions(issue.key))
+        logger.error("Error transitioning Test Case '%s' to status [%s]", issue.key, test_status)
+
+        return
+    logger.debug("Transitioned issue to status %s", test_status)
 
 
 def add_results(jira: JIRA, issueid: str, attachements: list[str] = None):
