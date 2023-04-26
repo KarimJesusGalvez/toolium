@@ -31,6 +31,7 @@ class JiraServer:
 
     def __init__(self, execution_url, token=None):
         global logger
+
         logger = logging.getLogger("Jira.Server")
         self.url = execution_url
         self._token = token
@@ -122,7 +123,7 @@ def add_attachment(attachment):
     """
     if attachment:
         attachments.append(attachment)
-        logger.info("Attachement Added from: " + attachment)
+        logger.info("Attachement added from: " + attachment)
 
 
 def add_jira_status(test_key, test_status, test_comment):
@@ -192,9 +193,10 @@ def change_jira_status(test_key, test_status, test_comment, test_attachments: li
                 # TODO issue = new_testcase(server, project_id, summary=scenarioname, description=description)
                 # test_key = issue.key
 
-            logger.info("Retrieving " + test_key)
-
-            new_execution = create_test_execution(server,test_key, project_id)
+            logger.debug("Creating execution for " + test_key)
+            new_execution = create_test_execution(server, test_key, project_id,
+                                                  summary_prefix, existing_issues[0].fields.summary, fix_version,
+                                                  existing_issues[0].fields.labels, labels)
             logger.info(f"Created execution {new_execution.key} for test " + test_key)
 
             # TODO massage payload, labels??
