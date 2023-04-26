@@ -167,6 +167,27 @@ def change_all_jira_status():
         logger.debug("Jira disabled, upload skipped")
 
 
+def check_jira_args(server: JIRA):
+
+    available_keys = []
+    for project_instance in server.projects():
+        available_keys.append([project_instance.raw['name'], project_instance.raw['key'],project_instance.raw['id']])
+    if project_id not in available_keys:
+        msg = f"No existe el proyecto '{project_id}'"
+        logger.warning(f"Available projects for your user: '{available_keys}'")
+        logger.error(msg)
+        raise ValueError(msg)
+
+    available_fixversions = []
+    for version in server.get_project_version_by_name(str(project_name)):
+        available_fixversions.append(version.raw["name"])
+    if fix_version not in available_fixversions:
+        msg = f"No existe la fix version '{fix_version}'"
+        logger.warning(f"Available fixversions for project {server.project(project_name))} are {available_fixversions}")
+        logger.error(msg)
+        raise ValueError(msg)
+
+
 def change_jira_status(test_key, test_status, test_comment, test_attachments: list[str]):
     """Update test status in Jira
 
