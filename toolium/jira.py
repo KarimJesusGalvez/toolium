@@ -284,14 +284,21 @@ def execute_query(jira: JIRA, query: str):
     return existing_issues
 
 
-def create_test_execution(server: JIRA, issueid: str, projectid: int, summary=None, description=None) -> Issue:
+def create_test_execution(server: JIRA, issueid: str, projectid: int, summary_prefix: str, test_summary: str,
+                          fix_version: str, parent_labels: list, new_labels: list = None, description: str = " ") -> Issue:
     """Creates an execution linked to the TestCase provided"""
     issue_dict = {
         'project': {'id': projectid},
-        'summary': summary if summary else input("Summary:"),
-        'description': description if description else input("Description:"),
+        'assignee': {'name': server.current_user()},
         'issuetype': {'name': 'Test Case Execution'},
-        'parent': {'key': issueid}
+        'parent': {'key': issueid},
+        'summary': str(summary_prefix) + " Execution of " + test_summary + " " + issueid,
+        'fixVersions': [{'name': fix_version}],
+        # TODO set priority as config input?
+        # 'priority': {'name': 'Minor', "id": 10101},
+        'labels': parent_labels + new_labels,
+        # 'versions': [{'name': fix_version}],
+        'description': description,
     }
 
     return server.create_issue(fields=issue_dict)
