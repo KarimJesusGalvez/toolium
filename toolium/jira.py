@@ -103,9 +103,9 @@ def save_jira_conf():
     config = DriverWrappersPool.get_default_wrapper().config
     enabled = config.getboolean_optional('Jira', 'enabled')
     jiratoken = config.get_optional('Jira', 'token')
-    project_id = int(config.get_optional('Jira', 'project_id'))
-    project_key = int(config.get_optional('Jira', 'project_key'))
-    project_name = int(config.get_optional('Jira', 'project_name'))
+    project_id = str(config.get_optional('Jira', 'project_id'))
+    project_key = str(config.get_optional('Jira', 'project_key'))
+    project_name = str(config.get_optional('Jira', 'project_name'))
     execution_url = config.get_optional('Jira', 'execution_url')
     summary_prefix = config.get_optional('Jira', 'summary_prefix')
     labels_raw = config.get_optional('Jira', 'labels')
@@ -177,41 +177,45 @@ def check_jira_args(server: JIRA):
     available_keys = []
     for project_instance in server.projects():
         # TODO turn into dict
-        available_keys.append([project_instance.raw['name'], project_instance.raw['key'],project_instance.raw['id']])
+        available_keys.append([project_instance.raw['name'], project_instance.raw['key'], project_instance.raw['id']])
 
-    if project_id:
-        project_option = project_id
-    elif project_key:
-        project_option = project_key
-    else:
-        project_option = project_name
+    logger.debug(f"Read project info read name:'{project_name}', key:'{project_key}', id:'{project_id}'")
 
     # TODO create def
-    if project_option not in available_keys:
-        msg = f"No existe el proyecto '{project_option}'"
+    project_option = ""
+    for key in available_keys:
+        if project_id in key[2]:
+            project_option = project_id
+        elif project_key in key[1]:
+            project_option = project_key
+        elif project_name in key[0]:
+            project_option = project_name
+
+    if not project_option:
+        msg = f"No existe el proyecto especificado name:'{project_name}', key:'{project_key}', id:'{project_id}'"
         logger.warning(f"Available projects for your user: '{available_keys}'")
         logger.error(msg)
         raise ValueError(msg)
 
     # TODO create def
     # TODO Refactor duplicate ifs
-    if project_id:
+    if project_option == project_id:
         project_key = server.project(str(project_id)).raw["key"]
-    elif project_key:
-        project_id = int(server.project(project_key).raw["id"])
+    elif project_option == project_key:
+        project_id = str(server.project(project_key).raw["id"])
     else:
         for version in available_keys:
             if project_name in version:
                 project_key = version[1]
-                project_id = int(version[2])
+                project_id = str(version[2])
 
     # TODO create def
     available_fixversions = []
-    for version in server.project_versions(project_name):
+    for version in server.project_versions(project_key):
         available_fixversions.append(version.raw["name"])
     if fix_version not in available_fixversions:
         msg = f"No existe la fix version '{fix_version}'"
-        logger.warning(f"Available fixversions for project {server.project(project_name)} are {available_fixversions}")
+        logger.warning(f"Available fixversions for project {server.project(project_key)} are {available_fixversions}")
         logger.error(msg)
         raise ValueError(msg)
 
@@ -284,8 +288,11 @@ def execute_query(jira: JIRA, query: str):
     return existing_issues
 
 
-def create_test_execution(server: JIRA, issueid: str, projectid: int, summary_prefix: str, test_summary: str,
-                          fix_version: str, parent_labels: list, new_labels: list = None, description: str = " ") -> Issue:
+def create_test_execution(server: JIRA, issueid: str, projectid: int,
+                          summary_prefix: str, test_summary: str,
+                          fix_version: str,
+                          parent_labels: list, new_labels: list = None,
+                          description: str = " ") -> Issue:
     """Creates an execution linked to the TestCase provided"""
     issue_dict = {
         'project': {'id': projectid},
