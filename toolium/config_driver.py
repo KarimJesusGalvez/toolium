@@ -501,7 +501,7 @@ class ConfigDriver(object):
 
         # TODO redirect capabilities to playwright's context
         # browser = chromium.launch().new_context(capabilities)
-        browser = browser_instace.launch().new_context(ignore_https_errors=True, record_video_dir="videos/",
+        browser = browser_instace.launch(headless=capabilities['headless']).new_context(ignore_https_errors=True, record_video_dir="videos/",
                                                 record_video_size={"width": 1040, "height": 680})
 
         page = browser.new_page()
@@ -509,7 +509,7 @@ class ConfigDriver(object):
         page.get_log = lambda name: logging.getLogger('Playwright.' + name)
         page.logger = lambda name: logging.getLogger('Playwright' + name)
 
-        page.desired_capabilities = {'platform': 'playwright', 'browser': browser.browser}
+        page.desired_capabilities = {'platform': 'playwright', 'browser': browser.browser, 'headless': capabilities['headless']}
 
         def generate_fake_sessionid(length: int) -> str:
             import random
@@ -563,5 +563,6 @@ class ConfigDriver(object):
 
     def _setup_playwright_firefox(self, capabilities) -> Page:
         return self._setup_playwright(capabilities, "firefox")
+
     def _setup_playwright_safari(self, capabilities) -> Page:
         return self._setup_playwright(capabilities, "safari")
