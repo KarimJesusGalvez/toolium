@@ -43,6 +43,25 @@ def get_error_message_from_exception(exception):
         return ''
 
 
+def set_playwright_capabilities():
+
+    headless = DriverWrappersPool.get_default_wrapper().config.get("Driver",option="headless")
+    if "f" in headless:
+        headless = False
+    else:
+        headless = True
+
+    capabilities = {
+        "browserName": "playwright",
+        "version": "1.2.6",
+        "platform": "ANY",
+        "javascriptEnabled": True,
+        "headless": headless
+    }
+    logging.getLogger('Playwright.Capabilities').info(f"capabilities: {capabilities}")
+    return capabilities
+
+
 class ConfigDriver(object):
     def __init__(self, config, utils=None):
         self.logger = logging.getLogger(__name__)
@@ -166,12 +185,7 @@ class ConfigDriver(object):
             capabilities = DesiredCapabilities.PHANTOMJS.copy()
         elif 'playwright' in driver_name:
             print("Setting playwright capabilities")
-            capabilities = {
-                "browserName": "playwright",
-                "version": "1.2.6",
-                "platform": "ANY",
-                "javascriptEnabled": True,
-            }
+            capabilities = set_playwright_capabilities()
         elif driver_name in ('android', 'ios', 'iphone'):
             capabilities = {}
         else:
