@@ -15,6 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+from playwright.sync_api import Page
 from selenium.common.exceptions import StaleElementReferenceException
 from toolium.pageelements.page_element import PageElement
 
@@ -47,7 +48,10 @@ class InputText(PageElement):
                                        '.shadowRoot.querySelector("%s")'
                                        '.value = "%s"' % (self.shadowroot, self.locator[1], value))
         else:
-            self.web_element.send_keys(value)
+            if isinstance(self.web_element, Page):
+                self.web_element.fill(value)
+            else:
+                self.web_element.send_keys(value)
 
     def clear(self):
         """Clear the element value

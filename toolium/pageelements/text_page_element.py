@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+from playwright.sync_api import Locator
 from toolium.pageelements.page_element import PageElement
 
 
@@ -26,4 +26,7 @@ class Text(PageElement):
 
         :returns: the text of the element
         """
-        return self.web_element.text
+        if isinstance(self.web_element, Locator):
+            return self.web_element.text_content()
+        else:
+            return self.web_element.text

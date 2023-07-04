@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+from playwright.sync_api import Locator
 from toolium.pageelements.button_page_element import Button
 
 
@@ -33,7 +33,10 @@ class InputRadio(Button):
 
         :returns: true whether the element is selected
         """
-        return self.web_element.is_selected()
+        if isinstance(self.web_element, Locator):
+            return self.web_element.is_checked()
+        else:
+            return self.web_element.is_selected()
 
     def check(self):
         """Select the radio button

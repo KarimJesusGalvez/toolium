@@ -15,7 +15,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
+from playwright.sync_api import Locator
 from toolium.pageelements.button_page_element import Button
 
 
@@ -28,19 +28,28 @@ class Checkbox(Button):
         """
         return self.web_element.get_attribute("value")
 
+    def _is_selected_by_driver(self) -> bool:
+        """
+        Checks if the element is selected, according to the type of driver that created the element
+        """
+        if isinstance(self.web_element, Locator):
+            return self.web_element.is_checked()
+        else:
+            return self.web_element.is_selected()
+
     def is_selected(self):
         """Returns whether the element is selected
 
         :returns: true whether the element is selected
         """
-        return self.web_element.is_selected()
+        return self._is_selected_by_driver()
 
     def check(self):
         """Select the checkbox
 
         :returns: page element instance
         """
-        if not self.is_selected():
+        if not self._is_selected_by_driver():
             self.web_element.click()
         return self
 
@@ -49,6 +58,6 @@ class Checkbox(Button):
 
         :returns: page element instance
         """
-        if self.is_selected():
+        if self._is_selected_by_driver():
             self.web_element.click()
         return self
