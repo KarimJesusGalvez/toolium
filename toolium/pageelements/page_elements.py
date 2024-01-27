@@ -17,6 +17,10 @@ limitations under the License.
 """
 from typing import List, Any
 
+from appium.webdriver.webdriver import WebDriver
+from playwright.sync_api import Page, Locator
+from selenium.webdriver.remote.webelement import WebElement
+
 from toolium.driver_wrapper import DriverWrappersPool
 from toolium.pageelements.button_page_element import Button
 from toolium.pageelements.checkbox_page_element import Checkbox
@@ -28,6 +32,7 @@ from toolium.pageelements.page_element import PageElement
 from toolium.pageelements.select_page_element import Select
 from toolium.pageelements.text_page_element import Text
 from toolium.pageobjects.common_object import CommonObject
+from toolium.visual_test import VisualTest
 
 
 class PageElements(CommonObject):
@@ -79,7 +84,7 @@ class PageElements(CommonObject):
         self._page_elements = []
 
     @property
-    def web_elements(self):
+    def web_elements(self) -> list[WebElement] | list[Locator]:
         """Find multiple WebElements using element locator
 
         :returns: list of web element objects
@@ -87,10 +92,16 @@ class PageElements(CommonObject):
                 or list of appium.webdriver.webelement.WebElement
         """
         if not self._web_elements or not self.config.getboolean_optional('Driver', 'save_web_element'):
-            if self.parent:
-                self._web_elements = self.utils.get_web_element(self.parent).find_elements(*self.locator)
-            else:
-                self._web_elements = self.driver.find_elements(*self.locator)
+            if isinstance(self.driver, Page) and not self._web_elements:
+                elem_list: Locator = self.driver.locator(str(self.locator[1]))
+                for count in range(elem_list.count()):
+                    self._web_elements.append(elem_list.nth(count))
+            elif isinstance(self.driver, WebDriver) and not self._web_elements:
+                if self.parent:
+                    self._web_elements = self.utils.get_web_element(self.parent).find_elements(*self.locator)
+                else:
+                    self._web_elements = self.driver.find_elements(*self.locator)
+
         return self._web_elements
 
     @property
@@ -109,6 +120,14 @@ class PageElements(CommonObject):
                 page_element.reset_object(self.driver_wrapper)
                 page_element._web_element = web_element
                 self._page_elements.append(page_element)
+
+        if isinstance(self.driver, Page):
+            self.logger.debug("Playwright locator for list is " + self.locator.__repr__())
+            locator = str(self.locator[1])
+            self.logger.debug('Element will be searched from parent element or from driver')
+            self.logger.debug('Find elements and get the correct index or find a single element')
+            self._web_element: Locator = self.driver.locator(locator)[self.order] if self.order \
+                else self.driver.locator(locator)
         return self._page_elements
 
     def assert_screenshot(self, filename: str, index: int = 0,
