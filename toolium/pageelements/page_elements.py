@@ -111,6 +111,24 @@ class PageElements(CommonObject):
                 self._page_elements.append(page_element)
         return self._page_elements
 
+    def assert_screenshot(self, filename: str, index: int = 0,
+                          threshold: int = 0, exclude_elements: list = [], force: bool = False):
+        """Assert that a screenshot of the element is the same as a screenshot on disk, within a given threshold.
+
+        :param filename: the filename for the screenshot, which will be appended with ``.png``
+        :param index: index of the element in the web_elements list
+        :param threshold: percentage threshold for triggering a test failure (value between 0 and 1)
+        :param exclude_elements: list of WebElements, PageElements or element locators as a tuple (locator_type,
+                                 locator_value) that must be excluded from the assertion
+        :param force: if True, the screenshot is compared even if visual testing is disabled by configuration
+        """
+        # TODO sanitize filename
+        if not filename.endswith(".png"):
+            filename += ".png"
+        VisualTest(self.driver_wrapper, force).assert_screenshot(self.web_elements[index], filename,
+                                                                 self.__class__.__name__, threshold,
+                                                                 exclude_elements)
+
     def __len__(self):
         return len(self.page_elements)
 
