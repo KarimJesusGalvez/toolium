@@ -15,9 +15,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-from playwright.sync_api import Page
+from playwright.sync_api import Page, Locator
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
 
 from toolium.driver_wrapper import DriverWrappersPool
 from toolium.pageobjects.common_object import CommonObject
@@ -77,7 +78,7 @@ class PageElement(CommonObject):
         self._web_element = None
 
     @property
-    def web_element(self):
+    def web_element(self) -> WebElement | Locator:
         """Find WebElement using element locator
 
         :returns: web element object
@@ -116,9 +117,9 @@ class PageElement(CommonObject):
                                                                                         self.locator[1]))
             else:
 
-                if isinstance(self.driver,Page):
-                    self.logger.debug("Playwright locator for element is " +  self.locator.__repr__())
-                    locator = str(self.locator[0]) + "=" + str(self.locator[1])
+                if isinstance(self.driver, Page):
+                    self.logger.debug("Playwright locator for element is " + self.locator.__repr__())
+                    locator = str(self.locator[1])
                     self.logger.debug('Element will be searched from parent element or from driver')
                     self.logger.debug('Find elements and get the correct index or find a single element')
                     self._web_element = self.driver.locator(locator)[self.order] if self.order \
