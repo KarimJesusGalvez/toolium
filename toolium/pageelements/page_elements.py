@@ -166,6 +166,23 @@ class Selects(PageElements):
 class Texts(PageElements):
     page_element_class = Text
 
+    @property
+    def text(self):
+        """Get the text of the elements bypassing playwright's strict mode
+        :returns: a list with the texts
+        """
+        text_list = []
+
+        if isinstance(self.web_elements[0], Locator):
+            # TODO except Indexerror
+            for element in self.web_elements:
+                text_list.append(element.text_content())
+        else:
+            for element in self.web_elements:
+                text_list.append(element.text)
+
+        return text_list
+
 
 class Groups(PageElements):
     page_element_class = Group
